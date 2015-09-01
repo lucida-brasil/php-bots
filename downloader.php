@@ -14,33 +14,39 @@ $server_file    = 'php.ini';
 
 $log_folder     = 'logs/';
 $log            = fopen($log_folder.'log.txt', 'a+');
+$error_log      = fopen($log_folder.'error_log.txt', 'a+');
 
-// set up basic connection
+// Set up basic connection
 $conn_id = ftp_connect($ftp_server);
 
-// login with username and password
-$login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
+if ($conn_id){
+	// Login with username and password
+	$login_result = ftp_login($conn_id, $ftp_user_name, $ftp_user_pass);
 
-// Checks if the download folder exists, if not, creates it
-if ( !is_writable($destiny_folder) ) mkdir($destiny_folder);
+	if ($login_result){
+		// Checks if the download folder exists, if not, creates it
+		if ( !is_writable($destiny_folder) ) mkdir($destiny_folder);
 
-// try to download $server_file and save to $local_file
-if (ftp_get($conn_id, $local_file, $server_file, FTP_BINARY)) {
-    fwrite($log, $date."Arquivo $local_file salvo com sucesso".PHP_EOL);
+		// Try to download $server_file and save to $local_file
+		if (ftp_get($conn_id, $local_file, $server_file, FTP_BINARY)) {
+		    fwrite($log, $date."Arquivo $local_file salvo com sucesso".PHP_EOL);
+
+		} else {
+		    fwrite($error_log, $date."Não foi possível salvar o arquivo $local_file".PHP_EOL);
+		}
+
+		// Close the connection
+		ftp_close($conn_id);
+	} else {
+		fwrite($error_log, $date."Não foi possível efetuar login no servidor FTP".PHP_EOL);
+	}
 
 } else {
-    $error_message = $date."Não foi possível salvar o arquivo $local_file".PHP_EOL;
-    $error_log     = fopen($log_folder.'error_log.txt', 'a+');
-    
-    fwrite($log, $error_message);
-    fwrite($error_log, $error_message);
-
-    fclose($error_log);
+	fwrite($error_log, $date."Não foi possível se conectar ao servidor FTP".PHP_EOL);
 }
 
+// Close the files
+fclose($error_log);
 fclose($log);
-
-// close the connection
-ftp_close($conn_id);
 
 ?>
