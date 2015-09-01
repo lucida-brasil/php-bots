@@ -1,6 +1,7 @@
 <?php
+define('ROOTPATH', __DIR__);
 
-include 'config.php';
+include ROOTPATH.'/config.php';
 
 date_default_timezone_set('America/Sao_Paulo');
 
@@ -8,8 +9,8 @@ $date_time      = new DateTime();
 $time_stamp     = $date_time->getTimestamp();
 $date           = $date_time->format('d-m-Y | H:i:s | ');
 
-$destiny_folder = 'downloads/'; 
-$log_folder     = 'logs/';
+$destiny_folder = ROOTPATH.'/downloads/'; 
+$log_folder     = ROOTPATH.'/logs/';
 $local_file     = $destiny_folder.'test-'.$time_stamp.'.ini';
 $server_file    = 'php.ini';
 
