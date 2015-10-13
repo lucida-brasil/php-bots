@@ -71,7 +71,7 @@ class VtexRequest {
                 method: 'GET',
                 url: `${this.host}orders/`,
                 qs : {
-                    page: 1,
+                    page: 65,
                     an: this.an,
                     per_page : 50,
                     f_creationDate : `creationDate:[${startdate} TO ${enddate}]`,
