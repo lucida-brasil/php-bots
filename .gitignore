@@ -3,6 +3,7 @@ logs/*
 
 #config
 config.php
+config.json
 
 #downloads
 downloads/*
