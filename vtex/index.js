@@ -20,16 +20,17 @@ let r = new VtexRequest(
     config.apptoken,
     config.appkey,
     'boticario',
-    120000
-    , true
+    12000,
+    '',
+    false
 );
 
 let ordersFile   = new File( 'csv/orders.csv', timing.startTimeStamp );
 let productsFile = new File( 'csv/products.csv', timing.startTimeStamp );
 let clientsFile  = new File( 'csv/clients.csv', timing.startTimeStamp );
 
-r.getOrdersByDate(
-    new Date(2015, 8, 13), // Data inicial
+/*r.getOrdersByDate(
+    new Date(2015, 8, 1), // Data inicial
     new Date(2015, 10, 13), // Data final
     function(err, data) { // Callback com todos os pedidos
         timing.end  = new Date();
@@ -64,21 +65,56 @@ r.getOrdersByDate(
         console.log(produtos, ' produtos');
     
     }
+);*/
+
+r.getOrderIds(
+    new Date(2015, 8, 1),
+    new Date(2015, 10, 13),
+    function(err, data) { // Callback com todos os pedidos
+        timing.end  = new Date();
+        let endms   = timing.end.getTime();
+        let startms = timing.start.getTime();
+        let minutes = Math.round(((endms - startms)/1000)/60);
+        console.log(`${data.length} pedidos baixados em ${minutes.toFixed(2)} minutos.`);
+     },
+
+    function(data){
+        let orders = data.list;
+        //loop
+
+        orders.forEach( (order) => {
+            r.getOrder(order.orderId, function(err, pedido){
+                if (pedido && pedido.clientProfileData) {
+                    pedido.userProfileId = pedido.clientProfileData.userProfileId;
+            
+                    clientsFile.writeLine(pedido.clientProfileData); //salva o pedido no arquivo
+                    delete pedido.clientProfileData; //remove cliente do pedido
+                
+                    pedido.items.forEach((produto) => {
+                        produto.orderId = pedido.orderId;
+                        productsFile.writeLine(produto); //salva o produto no arquivo
+                        produtos++;
+                    });
+                
+                    delete pedido.items; //remove produtos do pedido
+                
+                    ordersFile.writeLine(pedido); //salva o produto no arquivo
+                
+                    pedidos++;
+                    clientes++;
+
+                    console.log(pedidos, ' pedidos');
+                    console.log(clientes, ' clientes');
+                    console.log(produtos, ' produtos');
+                }
+                else {
+                    /*console.log('******************************');
+                    console.log('******************************');
+                    console.log('******************************');
+                    console.log('******************************');
+                    console.log(pedido);*/
+                }
+            });
+        });
+    }
 );
-
-
-// r.getOrderIds(
-//     new Date(2015, 8, 1),
-//     new Date(2015, 8, 2),
-//     function(err, data) {
-//         console.log(err);
-//         console.log('--------------');
-//         console.log(data);
-//     }
-// );
-
-// r.getOrder('v5366857bot-01', function(err, data){
-//     console.log(err);
-//     console.log('--------------');
-//     console.log(data);
-// });

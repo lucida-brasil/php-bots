@@ -8,9 +8,11 @@ let request  = require('request');
 require('prototype-pluck');
 
 class VtexRequest {
-    constructor(apptoken, appkey, an, timeout, debug) {
+    constructor(apptoken, appkey, an, timeout, status, debug) {
         this.debug      = debug;
-        this.dateformat = 'YYYY-MM-DDThh:mm:ss.000[Z]'
+        this.dateformat = 'YYYY-MM-DDThh:mm:ss.000[Z]';
+        this.timeout    = timeout;
+        this.status     = status;
         this.an         = an;
         this.host       = 'http://oms.vtexcommerce.com.br/api/oms/pvt/';
         this.token      = apptoken;
@@ -71,7 +73,7 @@ class VtexRequest {
                 method: 'GET',
                 url: `${this.host}orders/`,
                 qs : {
-                    page: 65,
+                    page: 1,
                     an: this.an,
                     per_page : 50,
                     f_creationDate : `creationDate:[${startdate} TO ${enddate}]`,
@@ -80,12 +82,20 @@ class VtexRequest {
                 timeout: this.timeout
             };
 
+        if ( this.status ) options.qs.f_status = this.status;
+
         let list = [];
 
         /** REQUEST **/
         let requestcb = (err, response, data) => {
             let paging;
-            if (err) callback(err);
+            if (err && ( err.code === "ENOTFOUND" || err.code ==='ETIMEDOUT' || err.code ==='ESOCKETTIMEDOUT' ) ) {
+                console.log("Erro de conexão: Não foi possível buscar a página. Tentando novamente em 5 segundos");
+                setTimeout( () => {
+                    request(options, requestcb);
+                }, 5000)
+            }
+            else if (err) callback(err);
             else if (data) {
                 data = JSON.parse(data);
                 paging = data.paging;
@@ -111,7 +121,7 @@ class VtexRequest {
 
                 if ( paging.currentPage < paging.pages ) {
                     options.qs.page = options.qs.page+1;
-                    request(options, requestcb)
+                    request(options, requestcb);
                 }
                 else {
                     callback(null, list);
@@ -154,14 +164,23 @@ class VtexRequest {
                 `Iniciando request ${options.url}`
             );
         }
-        request(options, (err, response, data) => {
-            if (err) callback(err);
+
+        let requestcb = (err, response, data) => {
+            if (err && ( err.code === "ENOTFOUND" || err.code ==='ETIMEDOUT' || err.code ==='ESOCKETTIMEDOUT' ) ) {
+                console.log("Erro de conexão: Não foi possível buscar o pedido. Tentando novamente em 5 segundos");
+                setTimeout( () => {
+                    request(options, requestcb);
+                }, 5000)
+            }
+            else if (err) callback(err);
             else if (data) {
                 data = JSON.parse(data);
                 callback(null, data);
             }
             else callback();
-        });
+        }
+
+        request(options, requestcb);
     }
 
     getOrdersByDate(startdate, enddate, callback, cbeach) {
